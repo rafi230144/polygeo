@@ -125,9 +125,10 @@ sgn = \ n -> case n `rem` 2 of
 -}
 choose :: forall a. Num a => Nat -> Nat -> a
 choose = \ n0 n1 ->
-    fromIntegral @Natural $ foldr (\ i k !r ->
-        k $ r * (fromIntegral $ n0 - i) `quot` (fromIntegral $ i + 1)
-      ) id (range n1) 1
+    let !n' = min n1 (n0 - n1)
+    in  fromIntegral @Natural $ foldr (\ i k !r ->
+            k $ r * (fromIntegral $ n0 - i) `quot` (fromIntegral $ i + 1)
+          ) id (range n') 1
 
 
 -- * Type-level Natural numbers
