@@ -2,6 +2,3 @@
 .localized
 
 dist-newstyle
-
-*.hi
-*.o
