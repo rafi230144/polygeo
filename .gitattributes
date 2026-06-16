@@ -1,0 +1,2 @@
+*.md linguist-detectable=true
+*.cabal linguist-detectable=true
