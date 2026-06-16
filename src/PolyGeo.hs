@@ -104,11 +104,11 @@ type Nat = Word
     (and without undeflow if @n = 0@)
 -}
 range :: Nat -> [Nat]
-range =
-    let range_r = \ g b !n !n' -> case compare n n' of
-            GT -> g n' $ range_r g b n (n' + 1)
+range = \ n -> build $ \ g b ->
+    let range_r = \ !n' -> case compare n n' of
+            GT -> g n' . range_r $ n' + 1
             _  -> b
-    in  \ n -> build $ \ g b -> range_r g b n 0
+    in  range_r 0
 
 {- | Given argument @n@,
     returns @(-1) ^ n@,
@@ -121,11 +121,11 @@ sgn = \ n -> case n `rem` 2 of
 
 {- | Given arguments @n0@, @n1@,
     returns the 'Num'-polymorphic binomial coefficient @choose n0 n1@,
-    with intermediate results represented as Degs of 'Natural'
+    with intermediate results represented as terms of 'Natural'
 -}
 choose :: forall a. Num a => Nat -> Nat -> a
-choose = \ n0 n1 -> fromIntegral @Natural $
-    foldr (\ i k !r ->
+choose = \ n0 n1 ->
+    fromIntegral @Natural $ foldr (\ i k !r ->
         k $ r * (fromIntegral $ n0 - i) `quot` (fromIntegral $ i + 1)
       ) id (range n1) 1
 
@@ -143,7 +143,7 @@ data N where
 -- * Variable-length tuples
 
 {- | Given arguments @n@, @a@,
-    returns the type of (strict) @n@-tuples of Degs of @a@\;
+    returns the type of (strict) @n@-tuples of terms of @a@\;
     the runtime representation is *not* efficient!
 -}
 data Tup :: N -> Type -> Type where
@@ -182,7 +182,7 @@ instance forall (n :: N) a. (Eq a, Hashable a) => Hashable (Tup n a) where
     returns the type of @n@-variate polynomials with coefficients in @a@,
     represented as 'HashMap's from @'Tup' n 'Nat'@ to @a@\;
     is a newtype---not a synonym---so that instances like
-    @forall (n :: 'N'). 'Functor' ('Poly' n)@ may be declared as needed
+    @forall (n :: 'N'). 'Functor' ('Poly' n)@ may be declared as desired
 -}
 newtype Poly :: N -> Type -> Type where
     Poly :: forall (n :: N) a. { unPoly :: HashMap (Tup n Nat) a } -> Poly n a
@@ -206,7 +206,7 @@ evalPoly = \ f ta -> sum $ do
     pure . (a *) . product $ zipWithTup (^) ta tn
 
 
--- *_ (Finite) sets of Degs of multivariate polynomials
+-- *_ (Finite) sets of degrees of multivariate polynomials
 
 {- | Given argument @n@,
     returns the type of sets of degrees of @n@-variate polynomials,
@@ -226,7 +226,10 @@ toListDegs = HS.toList . unDegs
 {- | Downward set of degree -}
 hull :: forall (n :: N). Tup n Nat -> Degs n
 hull =
-    let hull_r :: forall (n' :: N). Tup n' Nat -> [Tup n' Nat]
+    let {- | The correctly polymorphic signature
+            apparently cannot be inferred by GHC
+        -}
+        hull_r :: forall (n' :: N). Tup n' Nat -> [Tup n' Nat]
         hull_r = \case
             Nil        -> [Nil]
             Cons tn' n -> do
