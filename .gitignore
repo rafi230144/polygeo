@@ -1,0 +1,7 @@
+.DS_Store
+.localized
+
+dist-newstyle
+
+*.hi
+*.o
